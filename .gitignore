@@ -1,3 +1,19 @@
+# Project files
 *.sh
 .windsurfrules
 scratchpad.md
+.specstory/
+
+# Python
+__pycache__/
+venv/
+*.pyc
+
+# IDE
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+._*
+Thumbs.db
