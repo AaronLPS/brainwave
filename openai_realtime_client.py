@@ -5,6 +5,7 @@ import logging
 import time
 from typing import Optional, Callable, Dict, List
 import asyncio
+from websockets.protocol import State
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,7 +27,7 @@ class OpenAIRealtimeAudioTextClient:
         """Connect to OpenAI's realtime API and configure the session"""
         self.ws = await websockets.connect(
             f"{self.base_url}?model={self.model}",
-            extra_headers={
+            additional_headers={
                 "Authorization": f"Bearer {self.api_key}",
                 "OpenAI-Beta": "realtime=v1"
             }
@@ -79,7 +80,7 @@ class OpenAIRealtimeAudioTextClient:
         logger.warning(f"Unhandled message type received from OpenAI: {message_type}")
     
     async def send_audio(self, audio_data: bytes):
-        if self.ws and self.ws.open:
+        if self.ws and self.ws.state == State.OPEN:
             await self.ws.send(json.dumps({
                 "type": "input_audio_buffer.append",
                 "audio": base64.b64encode(audio_data).decode('utf-8')
@@ -90,7 +91,7 @@ class OpenAIRealtimeAudioTextClient:
     
     async def commit_audio(self):
         """Commit the audio buffer and notify OpenAI"""
-        if self.ws and self.ws.open:
+        if self.ws and self.ws.state == State.OPEN:
             commit_message = json.dumps({"type": "input_audio_buffer.commit"})
             await self.ws.send(commit_message)
             logger.info("Sent input_audio_buffer.commit message to OpenAI")
@@ -100,7 +101,7 @@ class OpenAIRealtimeAudioTextClient:
     
     async def clear_audio_buffer(self):
         """Clear the audio buffer"""
-        if self.ws and self.ws.open:
+        if self.ws and self.ws.state == State.OPEN:
             clear_message = json.dumps({"type": "input_audio_buffer.clear"})
             await self.ws.send(clear_message)
             logger.info("Sent input_audio_buffer.clear message to OpenAI")
@@ -109,7 +110,7 @@ class OpenAIRealtimeAudioTextClient:
     
     async def start_response(self, instructions: str):
         """Start a new response with given instructions"""
-        if self.ws and self.ws.open:
+        if self.ws and self.ws.state == State.OPEN:
             await self.ws.send(json.dumps({
                 "type": "response.create",
                 "response": {
